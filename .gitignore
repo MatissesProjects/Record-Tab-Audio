@@ -1,3 +1,7 @@
+# Build and dependency directories
+node_modules/
+dist/
+
 # Python
 __pycache__/
 *.py[cod]

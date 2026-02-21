@@ -9,3 +9,6 @@
 - **Python Backend & MP3 Conversion** (`python-backend`): [./tracks/python-backend/index.md](./tracks/python-backend/index.md)
   - **Status**: Completed
   - **Description**: Create the Flask/FastAPI server, integrate FFmpeg, and handle track uploads and naming.
+- **TypeScript Migration** (`typescript-migration`): [./tracks/typescript-migration/index.md](./tracks/typescript-migration/index.md)
+  - **Status**: Completed
+  - **Description**: Convert extension logic to TypeScript and set up a build pipeline with esbuild.

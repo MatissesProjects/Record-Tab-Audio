@@ -1,0 +1,28 @@
+{
+  "name": "recordtabaudio",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/background.js",
+  "scripts": {
+    "build": "esbuild src/background.ts src/offscreen.ts --bundle --outdir=dist --target=chrome100",
+    "watch": "npm run build -- --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MatissesProjects/Record-Tab-Audio.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/MatissesProjects/Record-Tab-Audio/issues"
+  },
+  "homepage": "https://github.com/MatissesProjects/Record-Tab-Audio#readme",
+  "devDependencies": {
+    "@types/chrome": "^0.1.37",
+    "esbuild": "^0.27.3",
+    "typescript": "^5.9.3"
+  }
+}
