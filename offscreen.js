@@ -59,6 +59,9 @@ async function startRecording(streamId) {
     mediaRecorder.start();
     console.log('Recording started...');
 
+    // Step 2.2: The RMS Loop
+    monitorAudio();
+
     // For Milestone 1 validation: Record for 10 seconds and stop.
     setTimeout(() => {
       mediaRecorder.stop();
@@ -68,4 +71,20 @@ async function startRecording(streamId) {
   } catch (err) {
     console.error('Failed to start recording in offscreen document:', err);
   }
+}
+
+function monitorAudio() {
+  if (!analyser) return;
+
+  analyser.getFloatTimeDomainData(dataArray);
+
+  let sumSquares = 0.0;
+  for (const amplitude of dataArray) {
+    sumSquares += amplitude * amplitude;
+  }
+  const rms = Math.sqrt(sumSquares / dataArray.length);
+
+  // console.log('RMS:', rms); // For debugging
+
+  requestAnimationFrame(monitorAudio);
 }

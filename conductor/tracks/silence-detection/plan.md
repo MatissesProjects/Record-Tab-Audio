@@ -5,7 +5,7 @@
 
 - [x] **Step 2.1: Initialize AnalyserNode**
   - Inside `offscreen.js`, connect the audio stream to a Web Audio API `AnalyserNode`.
-- [ ] **Step 2.2: The RMS Loop**
+- [x] **Step 2.2: The RMS Loop**
   - Use `requestAnimationFrame` to constantly poll the frequency data.
   - Calculate the Root Mean Square (RMS) volume level.
 - [ ] **Step 2.3: The Split Trigger**
