@@ -12,3 +12,6 @@
 - **TypeScript Migration** (`typescript-migration`): [./tracks/typescript-migration/index.md](./tracks/typescript-migration/index.md)
   - **Status**: Completed
   - **Description**: Convert extension logic to TypeScript and set up a build pipeline with esbuild.
+- **Extension UI** (`extension-ui`): [./tracks/extension-ui/index.md](./tracks/extension-ui/index.md)
+  - **Status**: Completed
+  - **Description**: Implement a popup UI to control recording, status, and settings.

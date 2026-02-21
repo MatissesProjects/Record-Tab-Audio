@@ -3,12 +3,22 @@ let recordedChunks: Blob[] = [];
 let analyser: AnalyserNode | null = null;
 let dataArray: Float32Array | null = null;
 let silenceStart: number | null = null;
-const SILENCE_THRESHOLD = 0.01; // 1% of max volume
-const SILENCE_DURATION = 2500; // 2.5 seconds
+let silenceThreshold = 0.01; // 1% of max volume
+let silenceDuration = 2500; // 2.5 seconds
 
-chrome.runtime.onMessage.addListener(async (message: { type: string; streamId: string }) => {
+chrome.runtime.onMessage.addListener(async (message: { type: string; streamId: string; settings: any }) => {
   if (message.type === 'START_RECORDING') {
+    if (message.settings) {
+      silenceThreshold = message.settings.threshold || silenceThreshold;
+      silenceDuration = message.settings.duration || silenceDuration;
+    }
     startRecording(message.streamId);
+  } else if (message.type === 'STOP_RECORDING') {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      // On stop, wait for upload then close window
+      setTimeout(() => window.close(), 1000); 
+    }
   }
 });
 
@@ -77,7 +87,7 @@ async function startRecording(streamId: string) {
       }
       
       recordedChunks = [];
-      // Don't close window here if we want to continue recording new tracks
+      // Don't close window here automatically if splitting, but background can tell us to stop
     };
 
     mediaRecorder.start();
@@ -103,10 +113,10 @@ function monitorAudio() {
   const rms = Math.sqrt(sumSquares / dataArray.length);
 
   // Step 2.3: The Split Trigger
-  if (rms < SILENCE_THRESHOLD) {
+  if (rms < silenceThreshold) {
     if (silenceStart === null) {
       silenceStart = Date.now();
-    } else if (Date.now() - silenceStart > SILENCE_DURATION) {
+    } else if (Date.now() - silenceStart > silenceDuration) {
       console.log('Silence Detected! Triggering split...');
       silenceStart = null;
       splitRecording();
