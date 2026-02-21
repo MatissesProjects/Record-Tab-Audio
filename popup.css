@@ -80,6 +80,13 @@ hr {
     gap: 5px;
 }
 
+.settings .toggle-label {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 500;
+}
+
 input[type="number"] {
     padding: 6px;
     border: 1px solid #ccc;

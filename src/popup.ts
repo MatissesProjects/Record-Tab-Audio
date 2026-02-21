@@ -4,13 +4,15 @@ const statusDot = document.getElementById('status-dot') as HTMLSpanElement;
 const backendStatus = document.getElementById('backend-status') as HTMLDivElement;
 const thresholdInput = document.getElementById('threshold') as HTMLInputElement;
 const durationInput = document.getElementById('duration') as HTMLInputElement;
+const autoRecordToggle = document.getElementById('auto-record') as HTMLInputElement;
 
 let isRecording = false;
 
 // Load settings
-chrome.storage.local.get(['silenceThreshold', 'silenceDuration'], (result) => {
+chrome.storage.local.get(['silenceThreshold', 'silenceDuration', 'autoRecordEnabled'], (result) => {
     if (result.silenceThreshold) thresholdInput.value = result.silenceThreshold;
     if (result.silenceDuration) durationInput.value = result.silenceDuration;
+    if (result.autoRecordEnabled !== undefined) autoRecordToggle.checked = result.autoRecordEnabled;
 });
 
 // Check recording status on popup open
@@ -40,7 +42,7 @@ checkBackend();
 
 recordBtn.addEventListener('click', async () => {
     if (!isRecording) {
-        // Start Recording
+        // Start Recording manually
         const threshold = parseFloat(thresholdInput.value);
         const duration = parseInt(durationInput.value);
 
@@ -60,9 +62,30 @@ recordBtn.addEventListener('click', async () => {
             updateUI(true);
         }
     } else {
-        // Stop Recording
+        // Stop Recording manually
         chrome.runtime.sendMessage({ type: 'STOP_RECORD_FROM_POPUP' });
         updateUI(false);
+    }
+});
+
+autoRecordToggle.addEventListener('change', async () => {
+    const enabled = autoRecordToggle.checked;
+    chrome.storage.local.set({ autoRecordEnabled: enabled });
+    
+    if (enabled) {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab && tab.id) {
+            chrome.runtime.sendMessage({ 
+                type: 'ENABLE_AUTO_RECORD', 
+                tabId: tab.id,
+                settings: { 
+                    threshold: parseFloat(thresholdInput.value), 
+                    duration: parseInt(durationInput.value) 
+                }
+            });
+        }
+    } else {
+        chrome.runtime.sendMessage({ type: 'DISABLE_AUTO_RECORD' });
     }
 });
 
@@ -85,5 +108,8 @@ function updateUI(recording: boolean) {
 chrome.runtime.onMessage.addListener((message) => {
     if (message.type === 'STATUS_UPDATE') {
         updateUI(message.isRecording);
+    } else if (message.type === 'WAITING_FOR_AUDIO') {
+        statusText.textContent = 'Status: Waiting for audio...';
+        statusDot.className = 'idle'; // Or maybe an orange dot?
     }
 });
