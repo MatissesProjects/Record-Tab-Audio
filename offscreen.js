@@ -46,14 +46,36 @@ async function startRecording(streamId) {
       }
     };
 
-    mediaRecorder.onstop = () => {
+    mediaRecorder.onstop = async () => {
       const blob = new Blob(recordedChunks, { type: 'audio/webm' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `recording_${Date.now()}.webm`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      
+      // Step 3.4: Validation (End-to-End) - Upload to Backend
+      try {
+        const formData = new FormData();
+        formData.append('file', blob, `track_${Date.now()}.webm`);
+        
+        console.log('Uploading track to backend...');
+        const response = await fetch('http://localhost:5000/upload-track', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const result = await response.json();
+        console.log('Upload result:', result);
+        
+        if (result.status === 'success') {
+          console.log('Successfully recorded and converted track:', result.file);
+        } else {
+          console.error('Backend failed to process track:', result.message);
+          // Fallback to local download if backend fails
+          downloadLocally(blob);
+        }
+      } catch (err) {
+        console.error('Failed to connect to backend:', err);
+        // Fallback to local download if connection fails
+        downloadLocally(blob);
+      }
+      
       recordedChunks = [];
       // Don't close window here if we want to continue recording new tracks
     };
@@ -67,6 +89,15 @@ async function startRecording(streamId) {
   } catch (err) {
     console.error('Failed to start recording in offscreen document:', err);
   }
+}
+
+function downloadLocally(blob) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `recording_${Date.now()}.webm`;
+  a.click();
+  window.URL.revokeObjectURL(url);
 }
 
 function monitorAudio() {
