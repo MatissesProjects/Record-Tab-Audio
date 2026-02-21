@@ -2,6 +2,9 @@ let mediaRecorder;
 let recordedChunks = [];
 let analyser;
 let dataArray;
+let silenceStart = null;
+const SILENCE_THRESHOLD = 0.01; // 1% of max volume
+const SILENCE_DURATION = 2500; // 2.5 seconds
 
 chrome.runtime.onMessage.addListener(async (message) => {
   if (message.type === 'START_RECORDING') {
@@ -48,12 +51,11 @@ async function startRecording(streamId) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'recording.webm';
+      a.download = `recording_${Date.now()}.webm`;
       a.click();
       window.URL.revokeObjectURL(url);
       recordedChunks = [];
-      // Close the offscreen document after recording stops
-      window.close();
+      // Don't close window here if we want to continue recording new tracks
     };
 
     mediaRecorder.start();
@@ -62,19 +64,13 @@ async function startRecording(streamId) {
     // Step 2.2: The RMS Loop
     monitorAudio();
 
-    // For Milestone 1 validation: Record for 10 seconds and stop.
-    setTimeout(() => {
-      mediaRecorder.stop();
-      console.log('Recording stopped after 10 seconds.');
-    }, 10000);
-
   } catch (err) {
     console.error('Failed to start recording in offscreen document:', err);
   }
 }
 
 function monitorAudio() {
-  if (!analyser) return;
+  if (!analyser || mediaRecorder.state !== 'recording') return;
 
   analyser.getFloatTimeDomainData(dataArray);
 
@@ -84,7 +80,29 @@ function monitorAudio() {
   }
   const rms = Math.sqrt(sumSquares / dataArray.length);
 
-  // console.log('RMS:', rms); // For debugging
+  // Step 2.3: The Split Trigger
+  if (rms < SILENCE_THRESHOLD) {
+    if (silenceStart === null) {
+      silenceStart = Date.now();
+    } else if (Date.now() - silenceStart > SILENCE_DURATION) {
+      console.log('Silence Detected! Triggering split...');
+      silenceStart = null;
+      splitRecording();
+    }
+  } else {
+    silenceStart = null;
+  }
 
   requestAnimationFrame(monitorAudio);
+}
+
+function splitRecording() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+    // Restart recording immediately
+    setTimeout(() => {
+      mediaRecorder.start();
+      console.log('Restarted recording for new track.');
+    }, 100); 
+  }
 }
