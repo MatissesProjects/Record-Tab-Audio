@@ -11,5 +11,5 @@
 - [x] **Step 2.3: The Split Trigger**
   - If the RMS drops below a specific threshold for a sustained duration (e.g., 2.5 seconds), trigger a split.
   - Command the `MediaRecorder` to stop the current track and immediately start recording a new one.
-- [ ] **Step 2.4: Validation (Console Output)**
+- [x] **Step 2.4: Validation (Console Output)**
   - Ensure "Silence Detected!" is printed accurately when no sound is playing.
