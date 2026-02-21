@@ -15,3 +15,6 @@
 - **Extension UI** (`extension-ui`): [./tracks/extension-ui/index.md](./tracks/extension-ui/index.md)
   - **Status**: Completed
   - **Description**: Implement a popup UI to control recording, status, and settings.
+- **Auto-Record** (`auto-record`): [./tracks/auto-record/index.md](./tracks/auto-record/index.md)
+  - **Status**: Completed
+  - **Description**: Automatically trigger recording when audio playback starts in the active tab.

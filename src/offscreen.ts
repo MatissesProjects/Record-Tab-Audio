@@ -1,30 +1,53 @@
+enum RecordingState {
+  IDLE = 'IDLE',
+  WAITING_FOR_AUDIO = 'WAITING_FOR_AUDIO',
+  RECORDING = 'RECORDING'
+}
+
+let currentState: RecordingState = RecordingState.IDLE;
 let mediaRecorder: MediaRecorder | null = null;
 let recordedChunks: Blob[] = [];
 let analyser: AnalyserNode | null = null;
 let dataArray: Float32Array | null = null;
 let silenceStart: number | null = null;
-let silenceThreshold = 0.01; // 1% of max volume
-let silenceDuration = 2500; // 2.5 seconds
+let audioStream: MediaStream | null = null;
+
+let silenceThreshold = 0.01;
+let silenceDuration = 2500;
+let isAutoRecordMode = false;
 
 chrome.runtime.onMessage.addListener(async (message: { type: string; streamId: string; settings: any }) => {
   if (message.type === 'START_RECORDING') {
-    if (message.settings) {
-      silenceThreshold = message.settings.threshold || silenceThreshold;
-      silenceDuration = message.settings.duration || silenceDuration;
+    updateSettings(message.settings);
+    isAutoRecordMode = !!message.settings?.autoRecord;
+    
+    if (!audioStream) {
+      await startCapture(message.streamId);
     }
-    startRecording(message.streamId);
+
+    if (isAutoRecordMode) {
+      setRecordingState(RecordingState.WAITING_FOR_AUDIO);
+    } else {
+      startMediaRecorder();
+    }
   } else if (message.type === 'STOP_RECORDING') {
-    if (mediaRecorder && mediaRecorder.state === 'recording') {
-      mediaRecorder.stop();
-      // On stop, wait for upload then close window
-      setTimeout(() => window.close(), 1000); 
-    }
+    stopMediaRecorder();
+    setRecordingState(RecordingState.IDLE);
+    // Wait for final upload then close
+    setTimeout(() => window.close(), 2000);
   }
 });
 
-async function startRecording(streamId: string) {
+function updateSettings(settings: any) {
+  if (settings) {
+    silenceThreshold = settings.threshold || silenceThreshold;
+    silenceDuration = settings.duration || silenceDuration;
+  }
+}
+
+async function startCapture(streamId: string) {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
+    audioStream = await navigator.mediaDevices.getUserMedia({
       audio: {
         mandatory: {
           chromeMediaSource: 'tab',
@@ -34,75 +57,74 @@ async function startRecording(streamId: string) {
       video: false
     });
 
-    // Route the audio to a new AudioContext destination so the tab doesn't mute itself.
     const audioContext = new AudioContext();
-    const source = audioContext.createMediaStreamSource(stream);
+    const source = audioContext.createMediaStreamSource(audioStream);
     
-    // Step 2.1: Initialize AnalyserNode
     analyser = audioContext.createAnalyser();
     analyser.fftSize = 2048;
-    const bufferLength = analyser.frequencyBinCount;
-    dataArray = new Float32Array(bufferLength);
+    dataArray = new Float32Array(analyser.frequencyBinCount);
     
     source.connect(analyser);
     analyser.connect(audioContext.destination);
 
-    // Initialize MediaRecorder to start capturing the audio as audio/webm;codecs=opus.
-    mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
-    
-    mediaRecorder.ondataavailable = (event: BlobEvent) => {
-      if (event.data.size > 0) {
-        recordedChunks.push(event.data);
-      }
-    };
-
-    mediaRecorder.onstop = async () => {
-      const blob = new Blob(recordedChunks, { type: 'audio/webm' });
-      
-      // Step 3.4: Validation (End-to-End) - Upload to Backend
-      try {
-        const formData = new FormData();
-        formData.append('file', blob, `track_${Date.now()}.webm`);
-        
-        console.log('Uploading track to backend...');
-        const response = await fetch('http://localhost:5000/upload-track', {
-          method: 'POST',
-          body: formData
-        });
-        
-        const result = await response.json();
-        console.log('Upload result:', result);
-        
-        if (result.status === 'success') {
-          console.log('Successfully recorded and converted track:', result.file);
-        } else {
-          console.error('Backend failed to process track:', result.message);
-          // Fallback to local download if backend fails
-          downloadLocally(blob);
-        }
-      } catch (err) {
-        console.error('Failed to connect to backend:', err);
-        // Fallback to local download if connection fails
-        downloadLocally(blob);
-      }
-      
-      recordedChunks = [];
-      // Don't close window here automatically if splitting, but background can tell us to stop
-    };
-
-    mediaRecorder.start();
-    console.log('Recording started...');
-
-    // Step 2.2: The RMS Loop
     monitorAudio();
-
+    console.log('Audio capture started, monitoring...');
   } catch (err) {
-    console.error('Failed to start recording in offscreen document:', err);
+    console.error('Failed to start audio capture:', err);
+  }
+}
+
+function startMediaRecorder() {
+  if (!audioStream || currentState === RecordingState.RECORDING) return;
+
+  recordedChunks = [];
+  mediaRecorder = new MediaRecorder(audioStream, { mimeType: 'audio/webm;codecs=opus' });
+  
+  mediaRecorder.ondataavailable = (event: BlobEvent) => {
+    if (event.data.size > 0) recordedChunks.push(event.data);
+  };
+
+  mediaRecorder.onstop = handleRecorderStop;
+
+  mediaRecorder.start();
+  setRecordingState(RecordingState.RECORDING);
+  console.log('MediaRecorder started');
+}
+
+function stopMediaRecorder() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') {
+    mediaRecorder.stop();
+  }
+}
+
+async function handleRecorderStop() {
+  if (recordedChunks.length === 0) return;
+  
+  const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+  recordedChunks = [];
+
+  try {
+    const formData = new FormData();
+    formData.append('file', blob, `track_${Date.now()}.webm`);
+    
+    console.log('Uploading to backend...');
+    const response = await fetch('http://localhost:5000/upload-track', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const result = await response.json();
+    if (result.status !== 'success') {
+      downloadLocally(blob);
+    }
+  } catch (err) {
+    console.error('Upload failed:', err);
+    downloadLocally(blob);
   }
 }
 
 function monitorAudio() {
-  if (!analyser || !dataArray || (mediaRecorder && mediaRecorder.state !== 'recording')) return;
+  if (!analyser || !dataArray) return;
 
   analyser.getFloatTimeDomainData(dataArray);
 
@@ -112,17 +134,23 @@ function monitorAudio() {
   }
   const rms = Math.sqrt(sumSquares / dataArray.length);
 
-  // Step 2.3: The Split Trigger
-  if (rms < silenceThreshold) {
-    if (silenceStart === null) {
-      silenceStart = Date.now();
-    } else if (Date.now() - silenceStart > silenceDuration) {
-      console.log('Silence Detected! Triggering split...');
-      silenceStart = null;
-      splitRecording();
+  if (currentState === RecordingState.WAITING_FOR_AUDIO) {
+    if (rms > silenceThreshold) {
+      console.log('Audio detected! Starting recording...');
+      startMediaRecorder();
     }
-  } else {
-    silenceStart = null;
+  } else if (currentState === RecordingState.RECORDING) {
+    if (rms < silenceThreshold) {
+      if (silenceStart === null) {
+        silenceStart = Date.now();
+      } else if (Date.now() - silenceStart > silenceDuration) {
+        console.log('Silence detected! Splitting...');
+        silenceStart = null;
+        splitRecording();
+      }
+    } else {
+      silenceStart = null;
+    }
   }
 
   requestAnimationFrame(monitorAudio);
@@ -131,14 +159,24 @@ function monitorAudio() {
 function splitRecording() {
   if (mediaRecorder && mediaRecorder.state === 'recording') {
     mediaRecorder.stop();
-    // Restart recording immediately
+    // In auto-record mode, we go back to WAITING or just start immediately if there is still audio
+    // But usually, splitting means one song ended. 
+    // If there is still audio, we should probably start a new one immediately.
     setTimeout(() => {
-      if (mediaRecorder) {
-        mediaRecorder.start();
-        console.log('Restarted recording for new track.');
-      }
-    }, 100); 
+        if (isAutoRecordMode) {
+            // Check if we should wait for audio again or start immediately
+            // For now, let's go back to WAITING to be safe
+            setRecordingState(RecordingState.WAITING_FOR_AUDIO);
+        } else {
+            startMediaRecorder();
+        }
+    }, 100);
   }
+}
+
+function setRecordingState(state: RecordingState) {
+  currentState = state;
+  chrome.runtime.sendMessage({ type: 'STATUS_UPDATE', state: currentState, isRecording: state === RecordingState.RECORDING });
 }
 
 function downloadLocally(blob: Blob) {

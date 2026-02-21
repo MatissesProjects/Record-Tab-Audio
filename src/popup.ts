@@ -89,13 +89,18 @@ autoRecordToggle.addEventListener('change', async () => {
     }
 });
 
-function updateUI(recording: boolean) {
+function updateUI(recording: boolean, state: string = 'IDLE') {
     isRecording = recording;
     if (recording) {
         recordBtn.textContent = 'Stop Recording';
         recordBtn.className = 'recording';
         statusText.textContent = 'Status: Recording...';
         statusDot.className = 'recording';
+    } else if (state === 'WAITING_FOR_AUDIO') {
+        recordBtn.textContent = 'Stop Monitoring';
+        recordBtn.className = 'recording';
+        statusText.textContent = 'Status: Waiting for audio...';
+        statusDot.className = 'idle'; // Maybe an orange dot later?
     } else {
         recordBtn.textContent = 'Start Recording';
         recordBtn.className = '';
@@ -107,9 +112,6 @@ function updateUI(recording: boolean) {
 // Listen for status updates from background
 chrome.runtime.onMessage.addListener((message) => {
     if (message.type === 'STATUS_UPDATE') {
-        updateUI(message.isRecording);
-    } else if (message.type === 'WAITING_FOR_AUDIO') {
-        statusText.textContent = 'Status: Waiting for audio...';
-        statusDot.className = 'idle'; // Or maybe an orange dot?
+        updateUI(message.isRecording, message.state);
     }
 });
