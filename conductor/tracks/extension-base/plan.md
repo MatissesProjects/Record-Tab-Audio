@@ -3,7 +3,7 @@
 ## Phase 1: Chrome Extension (Frontend)
 ### Milestone 1: Record 10 seconds of audio and download locally as WebM.
 
-- [ ] **Step 1.1: manifest.json Setup**
+- [x] **Step 1.1: manifest.json Setup**
   - Request permissions: `tabCapture`, `offscreen`.
   - Define the background service worker (`background.js`).
 - [ ] **Step 1.2: The Background Coordinator (background.js)**

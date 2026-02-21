@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "RecordTabAudio",
+  "version": "1.0",
+  "description": "Captures audio from a Chrome tab and automatically splits it into separate tracks.",
+  "permissions": [
+    "tabCapture",
+    "offscreen",
+    "activeTab"
+  ],
+  "action": {
+    "default_title": "Start Recording"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}
