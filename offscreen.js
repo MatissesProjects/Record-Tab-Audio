@@ -1,5 +1,7 @@
 let mediaRecorder;
 let recordedChunks = [];
+let analyser;
+let dataArray;
 
 chrome.runtime.onMessage.addListener(async (message) => {
   if (message.type === 'START_RECORDING') {
@@ -22,7 +24,15 @@ async function startRecording(streamId) {
     // Route the audio to a new AudioContext destination so the tab doesn't mute itself.
     const audioContext = new AudioContext();
     const source = audioContext.createMediaStreamSource(stream);
-    source.connect(audioContext.destination);
+    
+    // Step 2.1: Initialize AnalyserNode
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 2048;
+    const bufferLength = analyser.frequencyBinCount;
+    dataArray = new Float32Array(bufferLength);
+    
+    source.connect(analyser);
+    analyser.connect(audioContext.destination);
 
     // Initialize MediaRecorder to start capturing the audio as audio/webm;codecs=opus.
     mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
