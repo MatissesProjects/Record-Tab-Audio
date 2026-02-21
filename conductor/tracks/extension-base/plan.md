@@ -6,7 +6,7 @@
 - [x] **Step 1.1: manifest.json Setup**
   - Request permissions: `tabCapture`, `offscreen`.
   - Define the background service worker (`background.js`).
-- [ ] **Step 1.2: The Background Coordinator (background.js)**
+- [x] **Step 1.2: The Background Coordinator (background.js)**
   - Listen for `chrome.action.onClicked`.
   - Call `chrome.tabCapture.getMediaStreamId()` to get the capture token.
   - Call `chrome.offscreen.createDocument()` to spawn `offscreen.html`.
