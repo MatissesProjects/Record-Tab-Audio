@@ -58,6 +58,9 @@ async function startCapture(streamId: string) {
     });
 
     const audioContext = new AudioContext();
+    if (audioContext.state === 'suspended') {
+      await audioContext.resume();
+    }
     const source = audioContext.createMediaStreamSource(audioStream);
     
     analyser = audioContext.createAnalyser();

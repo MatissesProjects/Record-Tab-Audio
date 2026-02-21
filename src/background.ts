@@ -15,8 +15,9 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
   } else if (message.type === 'STATUS_UPDATE') {
     isRecording = message.isRecording;
     currentRecordingState = message.state;
+    console.log('Status Update:', { isRecording, currentRecordingState });
     // Notify popup if it's open
-    chrome.runtime.sendMessage(message);
+    chrome.runtime.sendMessage({ type: 'STATUS_UPDATE', isRecording, state: currentRecordingState });
   }
 });
 
@@ -32,6 +33,9 @@ async function startRecording(tabId: number, settings: any) {
       justification: 'Capturing tab audio for recording.'
     });
     
+    // Small delay to ensure offscreen doc is ready to receive messages
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     chrome.runtime.sendMessage({
       type: 'START_RECORDING',
       streamId: streamId,
