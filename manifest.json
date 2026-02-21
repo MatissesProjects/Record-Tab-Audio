@@ -12,6 +12,6 @@
     "default_title": "Start Recording"
   },
   "background": {
-    "service_worker": "dist/background.js"
+    "service_worker": "background.js"
   }
 }

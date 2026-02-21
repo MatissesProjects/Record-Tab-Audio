@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/background.js",
   "scripts": {
-    "build": "esbuild src/background.ts src/offscreen.ts --bundle --outdir=dist --target=chrome100",
+    "build": "powershell -ExecutionPolicy Bypass -File build.ps1",
     "watch": "npm run build -- --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
