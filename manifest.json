@@ -6,10 +6,12 @@
   "permissions": [
     "tabCapture",
     "offscreen",
-    "activeTab"
+    "activeTab",
+    "storage"
   ],
   "action": {
-    "default_title": "Start Recording"
+    "default_title": "RecordTabAudio",
+    "default_popup": "popup.html"
   },
   "background": {
     "service_worker": "background.js"

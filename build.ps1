@@ -9,7 +9,7 @@ if (-not (Test-Path "dist")) {
 
 # Run esbuild
 Write-Host "Compiling TypeScript..."
-npx esbuild src/background.ts src/offscreen.ts --bundle --outdir=dist --target=chrome100
+npx esbuild src/background.ts src/offscreen.ts src/popup.ts --bundle --outdir=dist --target=chrome100
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Build failed!" -ForegroundColor Red
     exit 1
@@ -19,6 +19,8 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "Copying assets..."
 Copy-Item "manifest.json" "dist/manifest.json" -Force
 Copy-Item "offscreen.html" "dist/offscreen.html" -Force
+Copy-Item "popup.html" "dist/popup.html" -Force
+Copy-Item "popup.css" "dist/popup.css" -Force
 
 Write-Host "--- Build Complete! ---" -ForegroundColor Green
 Write-Host "You can now load the 'dist' folder as an unpacked extension in Chrome."

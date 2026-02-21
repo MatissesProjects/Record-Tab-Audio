@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>RecordTabAudio</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <h1>RecordTabAudio</h1>
+        
+        <div class="status-box">
+            <span id="status-dot" class="idle"></span>
+            <span id="status-text">Status: Idle</span>
+        </div>
+
+        <button id="record-btn">Start Recording</button>
+
+        <hr>
+
+        <div class="settings">
+            <label>
+                Silence Threshold (RMS):
+                <input type="number" id="threshold" step="0.005" min="0" max="1" value="0.01">
+            </label>
+            <label>
+                Silence Duration (ms):
+                <input type="number" id="duration" step="500" min="500" value="2500">
+            </label>
+        </div>
+
+        <div id="backend-status" class="backend-idle">
+            Backend: Checking...
+        </div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>
