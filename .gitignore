@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+
+# Recorded files
+recorded_tracks/
+*.webm
+*.mp3
+
+# Chrome Extension
+*.crx
+*.pem
+
+# OS
+.DS_Store
+Thumbs.db
