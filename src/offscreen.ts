@@ -31,12 +31,24 @@ chrome.runtime.onMessage.addListener(async (message: { type: string; streamId: s
       startMediaRecorder();
     }
   } else if (message.type === 'STOP_RECORDING') {
-    stopMediaRecorder();
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      // On stop, wait for final upload then close
+      setTimeout(cleanupAndClose, 1500);
+    } else {
+      cleanupAndClose();
+    }
     setRecordingState(RecordingState.IDLE);
-    // Wait for final upload then close
-    setTimeout(() => window.close(), 2000);
   }
 });
+
+function cleanupAndClose() {
+  if (audioStream) {
+    audioStream.getTracks().forEach(track => track.stop());
+    audioStream = null;
+  }
+  window.close();
+}
 
 function updateSettings(settings: any) {
   if (settings) {

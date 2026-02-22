@@ -23,6 +23,12 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 
 async function startRecording(tabId: number, settings: any) {
   try {
+    // Check if offscreen already exists and close it to be safe
+    const hasOffscreen = await chrome.offscreen.hasDocument();
+    if (hasOffscreen) {
+      await chrome.offscreen.closeDocument();
+    }
+
     const streamId = await chrome.tabCapture.getMediaStreamId({
       targetTabId: tabId
     });
