@@ -41,16 +41,15 @@ async def upload_track(file: UploadFile = File(...)):
         subprocess.run([
             "ffmpeg", "-i", webm_path, "-vn", "-ab", "192k", "-ar", "44100", "-y", mp3_path
         ], check=True)
-        
-        # Cleanup: Remove the original webm file
-        if os.path.exists(webm_path):
-            os.remove(webm_path)
-            
         return {"status": "success", "file": mp3_filename}
     except subprocess.CalledProcessError as e:
         return {"status": "error", "message": f"FFmpeg failed: {str(e)}"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+    finally:
+        # Cleanup: Remove the original webm file
+        if os.path.exists(webm_path):
+            os.remove(webm_path)
 
 if __name__ == "__main__":
     import uvicorn

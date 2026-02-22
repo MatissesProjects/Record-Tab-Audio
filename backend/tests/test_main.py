@@ -40,3 +40,25 @@ def test_upload_mock_webm():
     finally:
         if os.path.exists(test_file_path):
             os.remove(test_file_path)
+
+def test_upload_invalid_file_cleanup():
+    # Create an invalid file that might cause ffmpeg to fail or just be a non-audio file
+    test_file_path = "invalid.webm"
+    with open(test_file_path, "wb") as f:
+        f.write(b"not a real webm")
+    
+    try:
+        response = client.post(
+            "/upload-track",
+            files={"file": ("invalid.webm", open(test_file_path, "rb"), "audio/webm")}
+        )
+        
+        # Even if it fails (e.g. status: error from ffmpeg), the webm should be gone
+        # We need to find the timestamp-based filename. Since we can't easily, 
+        # we check the directory for any webm files.
+        webms = [f for f in os.listdir("recorded_tracks") if f.endswith(".webm")]
+        assert len(webms) == 0, f"Expected 0 .webm files, found {len(webms)}: {webms}"
+        
+    finally:
+        if os.path.exists(test_file_path):
+            os.remove(test_file_path)
