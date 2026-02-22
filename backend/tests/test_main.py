@@ -27,11 +27,15 @@ def test_upload_mock_webm():
                 files={"file": ("test_audio.webm", f, "audio/webm")}
             )
         
-        # We expect a success or a specific FFmpeg error if FFmpeg isn't installed
-        # but the file upload part should work.
         assert response.status_code == 200
         data = response.json()
         assert "status" in data
+        
+        # Verify the .webm file was deleted (if status is success)
+        if data["status"] == "success":
+            filename = data["file"].replace(".mp3", ".webm")
+            webm_path = os.path.join("recorded_tracks", filename)
+            assert not os.path.exists(webm_path), f"File {webm_path} should have been deleted"
         
     finally:
         if os.path.exists(test_file_path):
