@@ -9,6 +9,15 @@
     "activeTab",
     "storage"
   ],
+  "commands": {
+    "toggle-recording": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+S",
+        "mac": "MacCtrl+Shift+S"
+      },
+      "description": "Start/Stop recording audio from the current tab"
+    }
+  },
   "action": {
     "default_title": "RecordTabAudio",
     "default_popup": "popup.html"

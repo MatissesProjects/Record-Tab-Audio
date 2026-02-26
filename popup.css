@@ -61,6 +61,13 @@ button:hover { background: #005a9e; }
 button.recording { background: #e81123; }
 button.recording:hover { background: #a80000; }
 
+.hotkey-hint {
+    font-size: 0.75rem;
+    color: #666;
+    text-align: center;
+    margin-top: -10px;
+}
+
 hr {
     border: none;
     border-top: 1px solid #ddd;

@@ -63,9 +63,28 @@ async function stopRecording() {
 // Still listen for the icon click as a shortcut
 chrome.action.onClicked.addListener(async (tab: chrome.tabs.Tab) => {
   if (!tab.id) return;
+  toggleRecording(tab.id);
+});
+
+chrome.commands.onCommand.addListener(async (command) => {
+  if (command === 'toggle-recording') {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (tab && tab.id) {
+      toggleRecording(tab.id);
+    }
+  }
+});
+
+async function toggleRecording(tabId: number) {
   if (!isRecording) {
-    startRecording(tab.id, { threshold: 0.01, duration: 2500, autoRecord: false });
+    const result = await chrome.storage.local.get(['silenceThreshold', 'silenceDuration']);
+    const settings = {
+      threshold: result.silenceThreshold || 0.01,
+      duration: result.silenceDuration || 2500,
+      autoRecord: false
+    };
+    startRecording(tabId, settings);
   } else {
     stopRecording();
   }
-});
+}
